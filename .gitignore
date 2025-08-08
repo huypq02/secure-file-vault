@@ -1,0 +1,16 @@
+# Ignore files and directories that should not be tracked by Git
+# General
+*.DS_Store
+cmd/*.exe
+cmd/__debug_bin*
+
+### IntelliJ IDEA ###
+.idea
+
+### VS Code ###
+.vscode/
+
+# Ignore build directories
+cmd/uploads/
+cmd/config/
+config/*.yaml
