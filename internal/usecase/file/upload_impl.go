@@ -11,7 +11,7 @@ import (
 
 func (uc *uploadFileUsecase) UploadFile(ctx context.Context, req *dto.UploadFileRequest) (*dto.UploadFileResponse, error) {
 	// Validate request
-	if req == nil || req.Filename == "" || len(req.File) == 0 {
+	if req == nil || req.Filename == "" || len(req.Data) == 0 {
 		return nil, fmt.Errorf("invalid file request or data")
 	}
 	if req.Size <= 0 {
@@ -38,7 +38,7 @@ func (uc *uploadFileUsecase) UploadFile(ctx context.Context, req *dto.UploadFile
 	meta.MarkAsUploading()
 
 	// Save file data to storage
-	storageResult, err := uc.storageService.Store(ctx, meta, req.File)
+	storageResult, err := uc.storageService.Store(ctx, meta, req.Data)
 	if err != nil {
 		// Mark as failed on storage error
 		meta.MarkAsFailed()
@@ -55,14 +55,24 @@ func (uc *uploadFileUsecase) UploadFile(ctx context.Context, req *dto.UploadFile
 
 	// Create response DTO
 	response := &dto.UploadFileResponse{
-		FileID:       meta.ID,
-		Filename:     meta.Filename,
-		OriginalName: meta.OriginalName,
-		Size:         meta.Size,
-		Checksum:     storageResult.Checksum,
-		Message:      "file uploaded successfully",
-		UploadedAt:   meta.CreatedAt,
+		FileUploadResult: dto.FileUploadResult{
+			FileID:       meta.ID,
+			Filename:     meta.Filename,
+			OriginalName: meta.OriginalName,
+			Size:         meta.Size,
+			Checksum:     storageResult.Checksum,
+			UploadedAt:   meta.CreatedAt,
+		},
+		Message: "file uploaded successfully",
 	}
+
+	return response, nil
+}
+
+func (uc *uploadFileUsecase) UploadMultipleFiles(ctx context.Context, file *dto.BatchUploadRequest) (*dto.BatchUploadResponse, error) {
+	var response *dto.BatchUploadResponse
+
+	
 
 	return response, nil
 }

@@ -134,12 +134,14 @@ func (f *FileHandler) parseUploadRequest(c *gin.Context) (*httpDTO.HTTPUploadFil
 
 func (f *FileHandler) convertToUsecaseUploadRequest(httpReq *httpDTO.HTTPUploadFileRequest) *usecaseDTO.UploadFileRequest {
 	return &usecaseDTO.UploadFileRequest{
-		OriginalName: httpReq.OriginalName,
-		Filename:     httpReq.Filename,
-		Size:         httpReq.Size,
-		ContentType:  httpReq.ContentType,
-		Description:  httpReq.Description,
-		File:         httpReq.FileData,
+		FileItem: usecaseDTO.FileItem{
+			OriginalName: httpReq.OriginalName,
+			Filename:     httpReq.Filename,
+			Size:         httpReq.Size,
+			ContentType:  httpReq.ContentType,
+			Data:         httpReq.FileData,
+		},
+		Description: httpReq.Description,
 	}
 }
 

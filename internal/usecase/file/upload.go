@@ -9,7 +9,7 @@ import (
 
 type UploadFileUsecase interface {
 	UploadFile(ctx context.Context, file *dto.UploadFileRequest) (*dto.UploadFileResponse, error)
-	// StoreFile(ctx context.Context, file *dto.UploadFileRequest) (*dto.UploadFileResponse, error)
+	UploadMultipleFiles(ctx context.Context, file *dto.BatchUploadRequest) (*dto.BatchUploadResponse, error)
 }
 
 type uploadFileUsecase struct {
