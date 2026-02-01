@@ -33,9 +33,6 @@ func main() {
 	// Initialize the file repository
 	fileRepo := db.NewFileRepository(dbConfig)
 
-	// Initialize the file provider
-	// fileProvider := file.
-
 	// Initialize the s3 service
 	s3Service, err := storage.NewS3Storage(cfg.GetStorageConfig())
 	if err != nil {
