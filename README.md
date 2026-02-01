@@ -1,96 +1,87 @@
-# S3 Secure File Storage & Sharing Mini-Project
+# Secure File Storage with S3 and PostgreSQL
 
-## 🎯 Project Overview
+A Go project for managing encrypted file uploads and downloads. Built with clean architecture principles because I got tired of refactoring monoliths. Uses AWS S3 for storage and PostgreSQL for metadata.
 
-This project provides a highly secure, scalable solution for file storage and sharing, designed to be easily deployable for personal use or as a mini SaaS offering. It leverages AWS S3 for encrypted file storage, PostgreSQL for metadata management, and follows clean architecture principles to ensure maintainability and rapid extensibility.
+## What It Does
 
----
+**Upload files**: You upload a file, it gets encrypted with AES-256, and stored in S3. Metadata goes into Postgres.
 
-## 🔧 Features
+**Download files**: Fetch from S3, decrypt, and serve back to the user. Works, doesn't explode.
 
-### 1. 📤 Secure File Upload
+**Expiring shares**: Generate time-limited shareable links. Good for sending sensitive docs without them lingering forever.
 
-- Users can upload files (PDFs, images, documents, etc.).
-- Files are encrypted using AES before being stored in AWS S3.
-- Metadata (file name, owner, creation date, expiry, etc.) is stored in PostgreSQL.
+**Auto cleanup**: Cron job deletes expired files from S3 and the database. Still figuring out the best way to handle edge cases here (concurrent deletes are annoying).
 
-### 2. 🔐 End-to-End Encryption
-
-- Server-side encryption guarantees that files are protected before storage.
-- AES keys can be further encrypted using RSA/public key cryptography for advanced sharing scenarios.
-- Only authorized recipients can decrypt and access file contents.
-
-### 3. 📥 Secure File Download
-
-- Users can retrieve and download previously uploaded files.
-- Files are fetched from S3 and decrypted on the server before delivery.
-
-### 4. 📎 File Sharing via Expiring Links
-
-- Generate shareable links with configurable expiration times.
-- Support for access limitation (number of downloads) and optional authentication requirements.
-
-### 5. 📅 Automatic File Expiry & Cleanup
-
-- Each file can have an expiry time set.
-- Background job (cron or worker) automatically deletes expired files from S3 and removes metadata from the database.
-- Ensures no stale or lingering data remains.
-
-### 6. 🛡️ Authentication & Authorization _(Extensible)_
-
-- Token-based authentication (JWT) for user validation.
-- Each file is tied to a specific user (owner).
-- Sharing can be restricted to specific users for enhanced access control.
+**Auth**: JWT tokens for now. Nothing fancy, but it works.
 
 ---
 
-## 🏗️ Architecture Principles
+## Architecture
 
-- **Clean Architecture:** Decoupled layers (Domain, Usecase, Interface, Infrastructure) enable easy testing, maintenance, and scaling.
-- **Security-First:** Data is encrypted at rest and in transit; keys are protected using best practices.
-- **Scalability:** Designed for both single-user deployment and SaaS multi-tenancy.
-- **Maintainability:** Simple, modular codebase with clear separation of concerns.
+Split into layers because it makes testing easier:
+
+- **Domain**: Business logic and interfaces. Doesn't know about HTTP or S3.
+- **Usecase**: Application business logic. Orchestrates domain and infrastructure.
+- **Interface**: HTTP handlers and routing.
+- **Infrastructure**: S3, database, crypto stuff. Anything that talks to external systems.
+
+It's not perfect, but it's maintainable. And testable. Which matters more than you'd think.
+
+## Setup
+
+See [docs/SETUP.md](docs/SETUP.md). Pretty straightforward if you have AWS and Postgres already.
+
+## Security Notes
+
+- Files are encrypted before leaving the server
+- Keys are... well, they're in environment variables for now. Not ideal for production but it works
+- Access control is enforced at the handler level
+- Expiry cleanup runs periodically to avoid accumulating old stuff
+
+## Known Issues / TODO
+
+- Key rotation isn't implemented yet. Something to think about.
+- Concurrent delete operations on S3 and DB need better handling. Had some weird race conditions during testing.
+- Multipart upload for large files isn't done. File size limits exist for now.
+- Admin endpoints for user/file management are missing.
+- Error messages could be more helpful.
+
+## Testing
+
+Basic test coverage exists. Not comprehensive. Some database tests use mocks, some use real Postgres in tests. It's a mess but it works.
+
+Run with: `go test ./...`
+
+## Running It
+
+```bash
+go run ./cmd/main.go
+```
+
+Server starts on port 8080 (or whatever you set in config). Hits the database and S3, hopefully succeeds.
 
 ---
 
-## 🚀 Getting Started
+## Why Clean Architecture?
 
-1. **Clone the repository**
-2. **Configure AWS, PostgreSQL, and environment variables**
-3. **Run the server and background job scheduler**
-4. **Access the API for file operations**
+Honestly? I got tired of fat controllers and database logic scattered everywhere. This structure makes it easier to:
 
-_See the [docs/SETUP.md](docs/SETUP.md) for detailed instructions._
+- Test business logic without mocking the entire world
+- Swap out S3 for something else if needed (though you probably won't)
+- Add new features without breaking everything
+- Onboard someone else onto the codebase
 
----
-
-## 🛡️ Security Considerations
-
-- **AES Encryption** is performed server-side before files are uploaded to S3.
-- **Key Management:** AES keys may be encrypted with RSA/public keys for secure sharing.
-- **Access Control:** All API endpoints require authentication; sharing links are time- and usage-limited.
-- **Data Lifecycle:** Expired files and metadata are purged automatically by scheduled jobs.
+Is it overkill for a small project? Maybe. But it's nice.
 
 ---
 
-## 💡 Extensibility Questions
+## Lessons Learned
 
-- How will key management evolve as you add more sharing and multi-user features?
-- What strategies will you use to efficiently handle large file uploads/downloads?
-- How will you ensure atomic deletion of files and metadata under high concurrency?
-- How will you adapt authentication and authorization as the system scales to multi-tenant SaaS?
-
----
-
-## 📚 References
-
-- [Clean Architecture by Robert C. Martin](https://8thlight.com/blog/uncle-bob/2012/08/13/the-clean-architecture.html)
-- [AWS S3 Security Best Practices](https://docs.aws.amazon.com/AmazonS3/latest/userguide/security-best-practices.html)
-- [Go Crypto Libraries](https://pkg.go.dev/golang.org/x/crypto)
-- [PostgreSQL Official Documentation](https://www.postgresql.org/docs/)
+- Go's error handling is verbose but it forces you to actually think about failures
+- S3's eventual consistency is annoying when you need immediate deletes
+- JWT tokens in headers are simpler than cookies, but you still need HTTPS
+- Database migrations should be automated (still working on this)
 
 ---
 
-## 🏆 Contributing
-
-Pull requests, feature suggestions, and security reviews are welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+Feel free to open issues or PRs if you find problems or think something's stupid.
