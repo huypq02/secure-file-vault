@@ -7,7 +7,7 @@ import (
 	"github.com/robfig/cron/v3"
 )
 
-type scheduler struct {
+type Scheduler struct {
 	cron           *cron.Cron
 	fileRepo       domain.FileRepository
 	storageService domain.StorageService
@@ -17,14 +17,14 @@ func NewScheduler(
 	fileRepo domain.FileRepository,
 	storage domain.StorageService,
 ) domain.Scheduler {
-	return &scheduler{
+	return &Scheduler{
 		cron:           cron.New(),
 		fileRepo:       fileRepo,
 		storageService: storage,
 	}
 }
 
-func (s *scheduler) Start() {
+func (s *Scheduler) Start() {
 	c := s.cron
 	c.AddFunc("0 2 * * *", func() {
 		// Runs at 2 AM daily
@@ -35,10 +35,10 @@ func (s *scheduler) Start() {
 	fmt.Println("Scheduler started")
 }
 
-func (s *scheduler) cleanupExpiredFiles() {
+func (s *Scheduler) cleanupExpiredFiles() {
 	// TODO: Implement: delete expired file automatically
 }
 
-func (s *scheduler) Stop() {
+func (s *Scheduler) Stop() {
 	s.cron.Stop()
 }

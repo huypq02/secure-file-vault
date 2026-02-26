@@ -33,14 +33,14 @@ func main() {
 	}
 	// Initialize the file repository
 	fileRepo := db.NewFileRepository(dbConfig)
-	// Initialize the s3 service
-	s3Service, err := storage.NewS3Storage(cfg.GetStorageConfig())
+	// Initialize the AWS S3 service
+	s3Client, err := storage.NewS3Storage(cfg.GetStorageConfig())
 	if err != nil {
-		fmt.Printf("Failed to create storage service: %v\n", err)
+		fmt.Printf("Failed to create AWS S3 service: %v\n", err)
 		return
 	}
 	// Initialize the storage services
-	storageService := storage.NewServiceStorage(s3Service)
+	storageService := storage.NewServiceStorage(s3Client, cfg.GetStorageConfig())
 	if storageService == nil {
 		fmt.Println("Failed to create storage service")
 		return
@@ -62,7 +62,7 @@ func main() {
 	// Interfaces layer
 	// Create file handler
 	fileHandler := handler.NewFileHandler(downloadFileUsecase, uploadFileUsecase)
-	// Initialize the Gin router and register routes
+	// Initialize the Gin router
 	r := router.NewRouter(fileHandler)
 	if r == nil {
 		fmt.Println("Failed to create router")

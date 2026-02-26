@@ -14,12 +14,17 @@ import (
 )
 
 type serviceStorage struct {
-	s3 *s3Storage
+	s3     S3API
+	config *domain.StorageConfig
 }
 
-func NewServiceStorage(s3 *s3Storage) domain.StorageService {
+func NewServiceStorage(
+	s3 S3API,
+	config *domain.StorageConfig,
+) domain.StorageService {
 	return &serviceStorage{
-		s3: s3,
+		s3:     s3,
+		config: config,
 	}
 }
 
@@ -29,8 +34,8 @@ func (s *serviceStorage) Store(ctx context.Context, file *domain.FileMetadata, d
 		return nil, err
 	}
 	// Upload file to S3
-	output, err := s.s3.client.PutObject(ctx, &s3.PutObjectInput{
-		Bucket:            aws.String(s.s3.config.Bucket),
+	output, err := s.s3.PutObject(ctx, &s3.PutObjectInput{
+		Bucket:            aws.String(s.config.Bucket),
 		Key:               aws.String(file.Filename),
 		Body:              bytes.NewReader(data),
 		ContentType:       aws.String(file.ContentType),
@@ -59,8 +64,8 @@ func (s *serviceStorage) Store(ctx context.Context, file *domain.FileMetadata, d
 
 func (s *serviceStorage) Retrieve(ctx context.Context, fileID string) ([]byte, error) {
 	// Retrieve file from S3
-	output, err := s.s3.client.GetObject(ctx, &s3.GetObjectInput{
-		Bucket: aws.String(s.s3.config.Bucket),
+	output, err := s.s3.GetObject(ctx, &s3.GetObjectInput{
+		Bucket: aws.String(s.config.Bucket),
 		Key:    aws.String(fileID),
 	})
 	if err != nil {
