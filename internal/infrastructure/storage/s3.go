@@ -10,12 +10,12 @@ import (
 	"github.com/huypq02/secure-file-vault/internal/domain"
 )
 
-type s3Storage struct {
-	client *s3.Client
-	config *domain.StorageConfig
+type S3API interface {
+	PutObject(ctx context.Context, params *s3.PutObjectInput, optFns ...func(*s3.Options)) (*s3.PutObjectOutput, error)
+	GetObject(ctx context.Context, params *s3.GetObjectInput, optFns ...func(*s3.Options)) (*s3.GetObjectOutput, error)
 }
 
-func NewS3Storage(config *domain.StorageConfig) (*s3Storage, error) {
+func NewS3Storage(config *domain.StorageConfig) (*s3.Client, error) {
 	// Load AWS SDK configuration
 	awsConfig, err := loadAWSConfig(config)
 	if err != nil {
@@ -32,10 +32,7 @@ func NewS3Storage(config *domain.StorageConfig) (*s3Storage, error) {
 		}
 	})
 
-	return &s3Storage{
-		client: s3Client,
-		config: config,
-	}, nil
+	return s3Client, nil
 }
 
 func loadAWSConfig(cfg *domain.StorageConfig) (aws.Config, error) {
