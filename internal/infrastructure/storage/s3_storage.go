@@ -13,28 +13,28 @@ import (
 	"github.com/huypq02/secure-file-vault/internal/domain"
 )
 
-type serviceStorage struct {
-	s3     S3API
+// s3Storage implements domain.StorageService using S3-compatible backend
+type s3Storage struct {
+	client S3API
 	config *domain.StorageConfig
 }
 
-func NewServiceStorage(
-	s3 S3API,
-	config *domain.StorageConfig,
-) domain.StorageService {
-	return &serviceStorage{
-		s3:     s3,
-		config: config,
+// NewS3StorageService creates a storage service with S3-compatible backend
+func NewS3StorageService(client S3API, cfg *domain.StorageConfig) domain.StorageService {
+	return &s3Storage{
+		client: client,
+		config: cfg,
 	}
 }
 
-func (s *serviceStorage) Store(ctx context.Context, file *domain.FileMetadata, data []byte) (*domain.StorageResult, error) {
+func (s *s3Storage) Store(ctx context.Context, file *domain.FileMetadata, data []byte) (*domain.StorageResult, error) {
 	// Validate file metadata
 	if err := file.Validate(); err != nil {
 		return nil, err
 	}
+
 	// Upload file to S3
-	output, err := s.s3.PutObject(ctx, &s3.PutObjectInput{
+	output, err := s.client.PutObject(ctx, &s3.PutObjectInput{
 		Bucket:            aws.String(s.config.Bucket),
 		Key:               aws.String(file.Filename),
 		Body:              bytes.NewReader(data),
@@ -62,9 +62,9 @@ func (s *serviceStorage) Store(ctx context.Context, file *domain.FileMetadata, d
 	}, nil
 }
 
-func (s *serviceStorage) Retrieve(ctx context.Context, fileID string) ([]byte, error) {
+func (s *s3Storage) Retrieve(ctx context.Context, fileID string) ([]byte, error) {
 	// Retrieve file from S3
-	output, err := s.s3.GetObject(ctx, &s3.GetObjectInput{
+	output, err := s.client.GetObject(ctx, &s3.GetObjectInput{
 		Bucket: aws.String(s.config.Bucket),
 		Key:    aws.String(fileID),
 	})

@@ -10,24 +10,29 @@ import (
 	"github.com/huypq02/secure-file-vault/internal/domain"
 )
 
+// S3API defines the interface for S3-compatible storage operations
+// This allows for different implementations (AWS S3, MinIO, LocalStack, etc.)
 type S3API interface {
 	PutObject(ctx context.Context, params *s3.PutObjectInput, optFns ...func(*s3.Options)) (*s3.PutObjectOutput, error)
 	GetObject(ctx context.Context, params *s3.GetObjectInput, optFns ...func(*s3.Options)) (*s3.GetObjectOutput, error)
 }
 
-func NewS3Storage(config *domain.StorageConfig) (*s3.Client, error) {
+// NewS3Client creates a new S3-compatible client based on configuration
+// Supports AWS S3, MinIO, and other S3-compatible services via custom endpoints
+func NewS3Client(cfg *domain.StorageConfig) (S3API, error) {
 	// Load AWS SDK configuration
-	awsConfig, err := loadAWSConfig(config)
+	awsConfig, err := loadAWSConfig(cfg)
 	if err != nil {
 		return nil, err
 	}
 
-	// Create S3 client
+	// Create S3-compatible client with custom endpoint support (for MinIO, etc.)
 	s3Client := s3.NewFromConfig(awsConfig, func(o *s3.Options) {
-		if config.Endpoint != "" {
-			o.UsePathStyle = config.ForcePathStyle
+		if cfg.Endpoint != "" {
+			o.BaseEndpoint = aws.String(cfg.Endpoint)
+			o.UsePathStyle = cfg.ForcePathStyle
 		}
-		if config.ForcePathStyle {
+		if cfg.ForcePathStyle {
 			o.UsePathStyle = true
 		}
 	})
