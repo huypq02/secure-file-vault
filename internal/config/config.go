@@ -67,3 +67,12 @@ func (c *Config) GetStorageConfig() *domain.StorageConfig {
 		ForcePathStyle:  c.Storage.ForcePathStyle,
 	}
 }
+
+// Provider functions for Wire dependency injection
+func ProvideDatabaseConfig(cfg domain.ConfigProvider) *domain.DatabaseConfig {
+	return cfg.GetDatabaseConfig()
+}
+
+func ProvideStorageConfig(cfg domain.ConfigProvider) *domain.StorageConfig {
+	return cfg.GetStorageConfig()
+}

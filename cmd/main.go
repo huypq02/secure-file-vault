@@ -2,80 +2,23 @@ package main
 
 import (
 	"fmt"
+	"log"
 
-	"github.com/huypq02/secure-file-vault/internal/config"
-	"github.com/huypq02/secure-file-vault/internal/infrastructure/db"
-	"github.com/huypq02/secure-file-vault/internal/infrastructure/external"
-	"github.com/huypq02/secure-file-vault/internal/infrastructure/scheduler"
-	"github.com/huypq02/secure-file-vault/internal/infrastructure/storage"
-	"github.com/huypq02/secure-file-vault/internal/interface/handler"
-	"github.com/huypq02/secure-file-vault/internal/interface/router"
-	"github.com/huypq02/secure-file-vault/internal/usecase/file"
+	"github.com/huypq02/secure-file-vault/internal/bootstrap"
 )
 
 func main() {
-	fmt.Println("Secure File Vault - Entry point")
+	fmt.Println("Secure File Vault - Starting...")
 
-	// Export env for database and storage service
-	cfg := config.NewConfig()
-
-	// Infrastructure layer
-	// Initialize database connection
-	dbConfig, err := db.NewConnection(cfg.GetDatabaseConfig())
+	// Initialize application using Wire-generated dependency injection
+	app, err := bootstrap.InitializeApp()
 	if err != nil {
-		fmt.Printf("Failed to create database connection: %v\n", err)
-		return
-	}
-	// Check database connection
-	if err := dbConfig.Connect(); err != nil {
-		fmt.Printf("Failed to connect to database: %v\n", err)
-		return
-	}
-	// Initialize the file repository
-	fileRepo := db.NewFileRepository(dbConfig)
-	// Initialize the AWS S3 service
-	s3Client, err := storage.NewS3Storage(cfg.GetStorageConfig())
-	if err != nil {
-		fmt.Printf("Failed to create AWS S3 service: %v\n", err)
-		return
-	}
-	// Initialize the storage services
-	storageService := storage.NewServiceStorage(s3Client, cfg.GetStorageConfig())
-	if storageService == nil {
-		fmt.Println("Failed to create storage service")
-		return
-	}
-	// Initialize ID service
-	idService := external.NewIDService()
-	if idService == nil {
-		fmt.Println("Failed to create ID service")
-		return
-	}
-	// Initialize scheduler
-	scheduler := scheduler.NewScheduler(fileRepo, storageService)
-
-	// Application logic layer
-	// Initialize use cases
-	downloadFileUsecase := file.NewDownloadFileUsecase(fileRepo, storageService)
-	uploadFileUsecase := file.NewUploadFileUsecase(fileRepo, storageService, idService)
-
-	// Interfaces layer
-	// Create file handler
-	fileHandler := handler.NewFileHandler(downloadFileUsecase, uploadFileUsecase)
-	// Initialize the Gin router
-	r := router.NewRouter(fileHandler)
-	if r == nil {
-		fmt.Println("Failed to create router")
-		return
+		log.Fatalf("Failed to initialize application: %v", err)
 	}
 
-	// Start the scheduler
-	scheduler.Start()
-	// Start the server
-	if err := r.Run(":8080"); err != nil {
-		fmt.Printf("Failed to start server: %v\n", err)
-		return
+	// Start the application (router + scheduler)
+	fmt.Println("Server starting on :8080")
+	if err := app.Run(":8080"); err != nil {
+		log.Fatalf("Failed to start server: %v", err)
 	}
-	// Print success message
-	fmt.Println("Server is running on port 8080")
 }
