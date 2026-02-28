@@ -11,14 +11,12 @@ import (
 )
 
 // S3API defines the interface for S3-compatible storage operations
-// This allows for different implementations (AWS S3, MinIO, LocalStack, etc.)
 type S3API interface {
 	PutObject(ctx context.Context, params *s3.PutObjectInput, optFns ...func(*s3.Options)) (*s3.PutObjectOutput, error)
 	GetObject(ctx context.Context, params *s3.GetObjectInput, optFns ...func(*s3.Options)) (*s3.GetObjectOutput, error)
 }
 
 // NewS3Client creates a new S3-compatible client based on configuration
-// Supports AWS S3, MinIO, and other S3-compatible services via custom endpoints
 func NewS3Client(cfg *domain.StorageConfig) (S3API, error) {
 	// Load AWS SDK configuration
 	awsConfig, err := loadAWSConfig(cfg)
