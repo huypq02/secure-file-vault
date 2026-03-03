@@ -81,3 +81,15 @@ func (s *s3Storage) Retrieve(ctx context.Context, fileID string) ([]byte, error)
 
 	return data, nil
 }
+
+func (s *s3Storage) Delete(ctx context.Context, fileID string) error {
+	_, err := s.client.DeleteObject(ctx, &s3.DeleteObjectInput{
+		Bucket: aws.String(s.config.Bucket),
+		Key:    aws.String(fileID),
+	})
+	if err != nil {
+		return err
+	}
+
+	return nil
+}

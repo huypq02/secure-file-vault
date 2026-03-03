@@ -1,6 +1,7 @@
 package scheduler
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/huypq02/secure-file-vault/internal/domain"
@@ -36,7 +37,19 @@ func (s *Scheduler) Start() {
 }
 
 func (s *Scheduler) cleanupExpiredFiles() {
-	// TODO: Implement: delete expired file automatically
+
+	// TODO: Check expiration file exceed current date
+	var fileIDList []string
+
+	// Delete files saving s3 storage
+	for _, fileID := range fileIDList {
+		if err := s.storageService.Delete(context.TODO(), fileID); err != nil {
+			fmt.Printf("Unexpected error while cleaning expired file ID %s: %v\n",
+				fileID, err)
+		}
+	}
+
+	fmt.Println("Cleanup expired files successfully")
 }
 
 func (s *Scheduler) Stop() {
